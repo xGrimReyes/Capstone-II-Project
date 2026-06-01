@@ -61,7 +61,7 @@ The main goals of the project are to:
 
 ---
 
-## Suggested Repository Structure
+## Repository Structure
 
 ```text
 Capstone-II-Project/
