@@ -1,0 +1,265 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PhishNet Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-color: #0f172a;
+            color: #f8fafc;
+        }
+
+        .header {
+            background-color: #1e293b;
+            padding: 20px;
+            text-align: center;
+            border-bottom: 3px solid #38bdf8;
+        }
+
+            .header h1 {
+                margin: 0;
+                font-size: 32px;
+            }
+
+            .header p {
+                margin-top: 8px;
+                color: #cbd5e1;
+            }
+
+        .container {
+            width: 90%;
+            max-width: 1200px;
+            margin: 30px auto;
+        }
+
+        .cards {
+            display: flex;
+            gap: 20px;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            flex: 1;
+            min-width: 220px;
+            background-color: #1e293b;
+            border-radius: 14px;
+            padding: 20px;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.35);
+            border-left: 5px solid #38bdf8;
+        }
+
+            .card h3 {
+                margin: 0 0 10px 0;
+                font-size: 18px;
+                color: #cbd5e1;
+            }
+
+            .card p {
+                margin: 0;
+                font-size: 30px;
+                font-weight: bold;
+                color: #f8fafc;
+            }
+
+        .filter-box {
+            background-color: #1e293b;
+            padding: 20px;
+            border-radius: 14px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.35);
+        }
+
+            .filter-box label {
+                font-weight: bold;
+                margin-right: 10px;
+            }
+
+            .filter-box select, .filter-box button {
+                padding: 10px 14px;
+                border-radius: 8px;
+                border: none;
+                font-size: 15px;
+                margin-left: 10px;
+            }
+
+            .filter-box button {
+                background-color: #38bdf8;
+                color: #000;
+                cursor: pointer;
+            }
+
+        .chart-box {
+            background-color: #1e293b;
+            padding: 25px;
+            border-radius: 14px;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.35);
+            margin-bottom: 30px;
+        }
+
+            .chart-box h2 {
+                margin-top: 0;
+                margin-bottom: 20px;
+                font-size: 22px;
+                color: #f8fafc;
+            }
+
+        .footer {
+            text-align: center;
+            color: #94a3b8;
+            padding: 20px;
+            font-size: 14px;
+        }
+
+        canvas {
+            max-width: 100%;
+        }
+
+        @media (max-width: 768px) {
+            .cards {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>PhishNet Dashboard</h1>
+        <p>Phishing Awareness Analysis System</p>
+    </div>
+
+    <div class="container">
+
+        <div class="cards">
+            <div class="card">
+                <h3>Total Users</h3>
+                <p id="totalUsers">-</p>
+            </div>
+
+            <div class="card">
+                <h3>Failure Rate</h3>
+                <p id="failureRate">-</p>
+            </div>
+
+            <div class="card">
+                <h3>Reporting Rate</h3>
+                <p id="reportingRate">-</p>
+            </div>
+        </div>
+
+        <div class="filter-box">
+            <label for="trainingFilter">Filter by Training Status:</label>
+            <select id="trainingFilter">
+                <option value="">All Users</option>
+                <option value="Trained">Trained</option>
+                <option value="Untrained">Untrained</option>
+            </select>
+            <button onclick="loadDashboard()">Load Data</button>
+        </div>
+
+        <div class="chart-box">
+            <h2>Failure Rate Comparison</h2>
+            <canvas id="barChart"></canvas>
+        </div>
+
+    </div>
+
+    <div class="footer">
+        Capstone II Project — Frontend / Visualization
+    </div>
+
+    <script>
+        let barChart;
+
+        async function fetchMetrics(trainingStatus = "") {
+            let url = "http://127.0.0.1:5000/api/dashboard";
+
+            if (trainingStatus) {
+                url += "?training_status=" + encodeURIComponent(trainingStatus);
+            }
+
+            const response = await fetch(url);
+            const data = await response.json();
+            return data.summary_metrics;
+        }
+
+        function updateCards(metrics) {
+            document.getElementById("totalUsers").textContent = metrics.total_users;
+            document.getElementById("failureRate").textContent = metrics.failure_rate + "%";
+            document.getElementById("reportingRate").textContent = metrics.reporting_rate + "%";
+        }
+
+        function createBarChart(trainedFailure, untrainedFailure) {
+            if (barChart) {
+                barChart.destroy();
+            }
+
+            barChart = new Chart(document.getElementById("barChart"), {
+                type: "bar",
+                data: {
+                    labels: ["Trained", "Untrained"],
+                    datasets: [{
+                        label: "Failure Rate (%)",
+                        data: [trainedFailure, untrainedFailure],
+                        backgroundColor: ["#22c55e", "#ef4444"],
+                        borderRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: "#f8fafc"
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            ticks: { color: "#f8fafc" },
+                            grid: { color: "rgba(255,255,255,0.1)" }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            ticks: { color: "#f8fafc" },
+                            grid: { color: "rgba(255,255,255,0.1)" }
+                        }
+                    }
+                }
+            });
+        }
+
+        async function loadDashboard() {
+            try {
+                const selected = document.getElementById("trainingFilter").value;
+
+                const selectedMetrics = await fetchMetrics(selected);
+                const trainedMetrics = await fetchMetrics("Trained");
+                const untrainedMetrics = await fetchMetrics("Untrained");
+
+                updateCards(selectedMetrics);
+                createBarChart(trainedMetrics.failure_rate, untrainedMetrics.failure_rate);
+
+            } catch (error) {
+                alert("Error loading dashboard data. Check backend and CORS settings.");
+                console.error(error);
+            }
+        }
+
+        loadDashboard();
+    </script>
+
+</body>
+</html>
