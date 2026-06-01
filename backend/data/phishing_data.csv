@@ -1,7 +1,0 @@
-record_id,user_id,training_status,link_clicked,phishing_reported
-1,U001,Trained,No,Yes
-2,U002,Untrained,Yes,No
-3,U003,Trained,No,Yes
-4,U004,Untrained,Yes,No
-5,U005,Trained,No,Yes
-6,U006,Untrained,Yes,No
