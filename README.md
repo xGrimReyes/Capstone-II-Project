@@ -105,7 +105,7 @@ cd backend
 Install the required Python packages:
 
 ```bash
-pip install -r requirements.txt
+pip install fastapi uvicorn
 ```
 
 Start the FastAPI server:
